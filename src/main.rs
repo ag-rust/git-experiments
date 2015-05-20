@@ -1,19 +1,35 @@
 extern crate git2;
 
 use git2::Repository;
-use git2::StatusOptions;
+use git2::Diff;
+use git2::DiffOptions;
 
 fn main() {
-    let res = Repository::open(".");
+    let res = Repository::open("/home/vagrant/git-add-interactive/.git");
 
     let r = match res {
         Ok(val) => val,
-        Err(_) => panic!("could not open respository")
+        Err(e) => panic!("could not open respository: {}", e)
     };
 
-    r.statuses(None)
-     .unwrap()
-     .iter()
-     .map(|s| { println!("{:?}", s.head_to_index().unwrap().status()) })
-     .collect::<Vec<_>>();
+    println!("workdir: {:?}", r.workdir());
+
+    let object = r.revparse_single("HEAD").unwrap();
+    let head = object.as_tree();
+
+    println!("HEAD is: {:?}", object.id());
+
+    let diff = Diff::tree_to_workdir_with_index(&r, head, None).unwrap();
+
+    println!("number of deltas: {}", diff.deltas().len());
+
+    let mut options = DiffOptions::new();
+    options.include_ignored(true);
+    options.include_untracked(true);
+
+    for d in diff.deltas() {
+        println!("status {:?}", d.status());
+        println!("orig path {:?}", d.old_file().path());
+        println!("new path {:?}", d.new_file().path());
+    }
 }
