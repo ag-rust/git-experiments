@@ -19,13 +19,15 @@ fn main() {
 
     println!("HEAD is: {:?}", object.id());
 
-    let diff = Diff::tree_to_workdir_with_index(&r, head, None).unwrap();
-
-    println!("number of deltas: {}", diff.deltas().len());
-
     let mut options = DiffOptions::new();
     options.include_ignored(true);
     options.include_untracked(true);
+    options.include_unmodified(false);
+
+    let diff = Diff::tree_to_workdir_with_index(&r, head, Some(&mut options)).unwrap();
+
+    println!("number of deltas: {}", diff.deltas().len());
+
 
     for d in diff.deltas() {
         println!("status {:?}", d.status());
